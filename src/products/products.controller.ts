@@ -3,6 +3,7 @@ import {
   Get,
   Post,
   Patch,
+  Delete,
   Body,
   Param,
   UseGuards,
@@ -89,5 +90,11 @@ export class ProductsController {
     @Body() dto: UpdateProductDto,
   ) {
     return this.productsService.update(req.user.tenantId, id, dto);
+  }
+
+  @Delete(':id')
+  @UseGuards(SubscriptionGuard)
+  remove(@Request() req: any, @Param('id') id: string) {
+    return this.productsService.remove(req.user.tenantId, id);
   }
 }

@@ -71,6 +71,14 @@ export class ProductsService {
     return product;
   }
 
+  async remove(tenantId: string, id: string) {
+    const product = await this.findOne(tenantId, id);
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data: { isActive: false },
+    });
+  }
+
   private calculatePrices(
     input: number,
     mode: PriceInputMode,
