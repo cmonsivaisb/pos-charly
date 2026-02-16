@@ -93,7 +93,7 @@ export class SalesService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
-    const [salesToday, totalProducts, totalCustomers, recentSales] = await Promise.all([
+    const [salesToday, stockSum, totalCustomers, recentSales] = await Promise.all([
       this.prisma.sale.aggregate({
         where: {
           tenantId,
@@ -102,8 +102,9 @@ export class SalesService {
         },
         _sum: { total: true },
       }),
-      this.prisma.product.count({
+      this.prisma.product.aggregate({
         where: { tenantId, isActive: true },
+        _sum: { stock: true },
       }),
       this.prisma.customer.count({
         where: { tenantId },
@@ -122,7 +123,7 @@ export class SalesService {
 
     return {
       todaySales: salesToday._sum.total || 0,
-      productCount: totalProducts,
+      productCount: stockSum._sum.stock || 0,
       customerCount: totalCustomers,
       recentSales,
     };
