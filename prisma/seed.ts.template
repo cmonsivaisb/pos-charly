@@ -1,0 +1,78 @@
+import { PrismaClient, UserRole, SubscriptionStatus, PriceInputMode } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
+
+const prisma = new PrismaClient();
+
+async function main() {
+  const password = await bcrypt.hash('admin123', 10);
+
+  // 1. Crear Super Admin de la Plataforma
+  await prisma.user.upsert({
+    where: { email: 'superadmin@possaas.com' },
+    update: {},
+    create: {
+      email: 'superadmin@possaas.com',
+      password,
+      role: UserRole.SUPER_ADMIN,
+    },
+  });
+
+  // 2. Crear un Tenant Activo
+  const activeTenant = await prisma.tenant.upsert({
+    where: { domain: 'active' },
+    update: {},
+    create: {
+      name: 'Negocio Activo S.A.',
+      domain: 'active',
+      subscriptionStatus: SubscriptionStatus.ACTIVE,
+      adminEmail: 'admin@active.com',
+    },
+  });
+
+  // Admin del Tenant Activo
+  await prisma.user.upsert({
+    where: { email: 'admin@active.com' },
+    update: {},
+    create: {
+      email: 'admin@active.com',
+      password,
+      role: UserRole.ADMIN,
+      tenantId: activeTenant.id,
+    },
+  });
+
+  // 3. Crear un Tenant Suspendido
+  const suspendedTenant = await prisma.tenant.upsert({
+    where: { domain: 'suspended' },
+    update: {},
+    create: {
+      name: 'Negocio Suspendido S.A.',
+      domain: 'suspended',
+      subscriptionStatus: SubscriptionStatus.SUSPENDED,
+      adminEmail: 'admin@suspended.com',
+    },
+  });
+
+  // Admin del Tenant Suspendido
+  await prisma.user.upsert({
+    where: { email: 'admin@suspended.com' },
+    update: {},
+    create: {
+      email: 'admin@suspended.com',
+      password,
+      role: UserRole.ADMIN,
+      tenantId: suspendedTenant.id,
+    },
+  });
+
+  console.log('Seed template completed.');
+}
+
+main()
+  .catch((e) => {
+    console.error(e);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });

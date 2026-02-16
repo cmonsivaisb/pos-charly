@@ -11,10 +11,11 @@ import { SalesService } from './sales.service';
 import { CreateSaleDto } from './dto/sale.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { TenantGuard } from '../tenancy/tenant.guard';
+import { SubscriptionGuard } from '../tenancy/subscription.guard';
 
 @ApiTags('Sales')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard, TenantGuard)
+@UseGuards(JwtAuthGuard, TenantGuard, SubscriptionGuard)
 @Controller('sales')
 export class SalesController {
   constructor(private readonly salesService: SalesService) {}

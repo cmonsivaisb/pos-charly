@@ -11,6 +11,7 @@ datasource db {
 
 // Enums
 enum UserRole {
+  PLATFORM_ADMIN
   ADMIN
   MANAGER
   CASHIER
@@ -48,12 +49,12 @@ enum PaymentMethod {
 
 model Tenant {
   id              String   @id @default(uuid())
-  name            String
-  businessName    String?  // Razón Social
+  name            String   // Trade Name / Nombre Comercial
+  legalName       String?  // Razón Social
   rfc             String?
   address         String?
   phone           String?
-  email           String
+  email           String   @unique
   
   // Configuración
   defaultIvaRate  Decimal  @default(0.16) @db.Decimal(5, 2)
@@ -62,7 +63,11 @@ model Tenant {
   // Suscripción
   subscriptionStatus SubscriptionStatus @default(TRIAL)
   trialEndsAt        DateTime?
+  activeSince        DateTime?
+  suspendedAt        DateTime?
+  suspendedReason    String?
   nextPaymentDate    DateTime?
+  planCode           String?   @default("MVP_MONTHLY")
   
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -116,7 +121,13 @@ model Product {
   sku             String?
   barcode         String?
   description     String?
-  imageUrl        String?
+  brand           String?
+  model           String?
+  packaging       String?   // "Caja 12 pzas"
+  tags            String[]
+  supplierName    String?
+  warehouseLocation String?
+  imagePath       String?   // Foto principal
   
   // Precios e Impuestos
   costPrice       Decimal  @db.Decimal(10, 2) // Costo

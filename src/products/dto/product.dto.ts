@@ -5,6 +5,7 @@ import {
   IsBoolean,
   Min,
   IsEnum,
+  IsArray,
 } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { PriceInputMode } from '@prisma/client';
@@ -23,6 +24,41 @@ export class CreateProductDto {
   @IsString()
   @IsOptional()
   barcode?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  description?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  brand?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  model?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  packaging?: string;
+
+  @ApiProperty({ required: false, type: [String] })
+  @IsArray()
+  @IsOptional()
+  tags?: string[];
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  supplierName?: string;
+
+  @ApiProperty({ required: false })
+  @IsString()
+  @IsOptional()
+  warehouseLocation?: string;
 
   @ApiProperty()
   @IsNumber()

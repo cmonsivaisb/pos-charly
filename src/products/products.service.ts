@@ -9,21 +9,50 @@ export class ProductsService {
   constructor(private prisma: PrismaService) {}
 
   async create(tenantId: string, dto: CreateProductDto) {
+    const { inputValue, ...data } = dto;
     const { priceBase, priceTotal } = this.calculatePrices(
-      dto.inputValue,
+      inputValue,
       dto.priceInputMode,
       dto.ivaRate || 0.16,
     );
 
     return this.prisma.product.create({
       data: {
-        ...dto,
-        inputValue: undefined, // Eliminar del spread
+        ...data,
         priceBase,
         priceTotal,
         ivaRate: dto.ivaRate || 0.16,
         tenantId,
-      } as any, // Cast temporal por si hay desajustes de tipos en el DTO
+      },
+    });
+  }
+
+  async updateImagePath(tenantId: string, id: string, imagePath: string) {
+    const product = await this.findOne(tenantId, id);
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data: { imagePath },
+    });
+  }
+
+  async update(tenantId: string, id: string, dto: UpdateProductDto) {
+    const product = await this.findOne(tenantId, id);
+    const { inputValue, ...data } = dto;
+
+    const { priceBase, priceTotal } = this.calculatePrices(
+      inputValue,
+      dto.priceInputMode,
+      dto.ivaRate || 0.16,
+    );
+
+    return this.prisma.product.update({
+      where: { id: product.id },
+      data: {
+        ...data,
+        priceBase,
+        priceTotal,
+        ivaRate: dto.ivaRate || 0.16,
+      },
     });
   }
 
