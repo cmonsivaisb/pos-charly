@@ -88,6 +88,11 @@ export class CreateProductDto {
   @IsBoolean()
   @IsOptional()
   trackStock?: boolean;
+
+  @ApiProperty({ required: false })
+  @IsNumber()
+  @IsOptional()
+  stock?: number;
 }
 
 export class UpdateProductDto extends CreateProductDto {}

@@ -29,4 +29,9 @@ export class SalesController {
   findAll(@Request() req: any) {
     return this.salesService.findAll(req.user.tenantId);
   }
+
+  @Get('stats')
+  getStats(@Request() req: any) {
+    return this.salesService.getStats(req.user.tenantId);
+  }
 }

@@ -88,4 +88,43 @@ export class SalesService {
       orderBy: { createdAt: 'desc' },
     });
   }
+
+  async getStats(tenantId: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const [salesToday, totalProducts, totalCustomers, recentSales] = await Promise.all([
+      this.prisma.sale.aggregate({
+        where: {
+          tenantId,
+          createdAt: { gte: today },
+          status: 'COMPLETED',
+        },
+        _sum: { total: true },
+      }),
+      this.prisma.product.count({
+        where: { tenantId, isActive: true },
+      }),
+      this.prisma.customer.count({
+        where: { tenantId },
+      }),
+      this.prisma.sale.findMany({
+        where: { tenantId },
+        take: 5,
+        orderBy: { createdAt: 'desc' },
+        select: {
+          folio: true,
+          total: true,
+          status: true,
+        },
+      }),
+    ]);
+
+    return {
+      todaySales: salesToday._sum.total || 0,
+      productCount: totalProducts,
+      customerCount: totalCustomers,
+      recentSales,
+    };
+  }
 }
