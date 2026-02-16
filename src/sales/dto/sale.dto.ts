@@ -31,6 +31,7 @@ export class CreateSaleDto {
   items: CreateSaleItemDto[];
 
   @ApiProperty({ enum: PaymentMethod })
+  @IsString()
   paymentMethod: PaymentMethod;
 
   @ApiProperty({ required: false })
