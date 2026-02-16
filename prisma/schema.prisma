@@ -1,0 +1,291 @@
+// schema.prisma
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  MANAGER
+  CASHIER
+}
+
+enum SubscriptionStatus {
+  TRIAL
+  PENDING_PAYMENT
+  ACTIVE
+  SUSPENDED
+  CANCELLED
+}
+
+enum PriceInputMode {
+  INCLUDES_TAX // Precio incluye IVA
+  EXCLUDES_TAX // Precio más IVA
+}
+
+enum StockMovementType {
+  IN
+  OUT
+  ADJUST
+  SALE
+  RETURN
+}
+
+enum PaymentMethod {
+  CASH
+  CARD
+  TRANSFER
+  OTHER
+}
+
+// --- TENANCY & AUTH ---
+
+model Tenant {
+  id              String   @id @default(uuid())
+  name            String
+  businessName    String?  // Razón Social
+  rfc             String?
+  address         String?
+  phone           String?
+  email           String
+  
+  // Configuración
+  defaultIvaRate  Decimal  @default(0.16) @db.Decimal(5, 2)
+  currency        String   @default("MXN")
+  
+  // Suscripción
+  subscriptionStatus SubscriptionStatus @default(TRIAL)
+  trialEndsAt        DateTime?
+  nextPaymentDate    DateTime?
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Relaciones
+  users             User[]
+  products          Product[]
+  categories        Category[]
+  customers         Customer[]
+  sales             Sale[]
+  inventoryMovements InventoryMovement[]
+  cashRegisters     CashRegister[]
+  auditLogs         AuditLog[]
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  role      UserRole @default(CASHIER)
+  isActive  Boolean  @default(true)
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relaciones
+  sales             Sale[]
+  cashSessions      CashRegisterSession[]
+  auditLogs         AuditLog[]
+}
+
+// --- CATÁLOGOS ---
+
+model Category {
+  id        String   @id @default(uuid())
+  name      String
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  products  Product[]
+  
+  @@unique([tenantId, name])
+}
+
+model Product {
+  id              String   @id @default(uuid())
+  name            String
+  sku             String?
+  barcode         String?
+  description     String?
+  imageUrl        String?
+  
+  // Precios e Impuestos
+  costPrice       Decimal  @db.Decimal(10, 2) // Costo
+  priceInputMode  PriceInputMode @default(INCLUDES_TAX)
+  priceBase       Decimal  @db.Decimal(10, 2) // Precio SIN impuestos
+  priceTotal      Decimal  @db.Decimal(10, 2) // Precio CON impuestos
+  ivaRate         Decimal  @default(0.16) @db.Decimal(5, 2)
+  
+  // Inventario
+  stock           Int      @default(0)
+  minStock        Int      @default(5)
+  trackStock      Boolean  @default(true)
+  
+  isActive        Boolean  @default(true)
+  
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  categoryId      String?
+  category        Category? @relation(fields: [categoryId], references: [id])
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  saleItems         SaleItem[]
+  inventoryMovements InventoryMovement[]
+
+  @@unique([tenantId, sku])
+  @@unique([tenantId, barcode])
+}
+
+// --- INVENTARIO ---
+
+model InventoryMovement {
+  id          String            @id @default(uuid())
+  type        StockMovementType
+  quantity    Int
+  previousStock Int
+  newStock    Int
+  reason      String?
+  referenceId String?           // ID de Venta o Compra opcional
+  
+  productId   String
+  product     Product           @relation(fields: [productId], references: [id])
+  
+  tenantId    String
+  tenant      Tenant            @relation(fields: [tenantId], references: [id])
+  
+  createdAt   DateTime          @default(now())
+}
+
+// --- VENTAS & CAJA ---
+
+model Customer {
+  id        String   @id @default(uuid())
+  name      String
+  email     String?
+  phone     String?
+  rfc       String?
+  address   String?
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  sales     Sale[]
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model CashRegister {
+  id        String   @id @default(uuid())
+  name      String   // "Caja Principal", "Caja 2"
+  
+  tenantId  String
+  tenant    Tenant   @relation(fields: [tenantId], references: [id])
+  sessions  CashRegisterSession[]
+}
+
+model CashRegisterSession {
+  id            String    @id @default(uuid())
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+  initialCash   Decimal   @db.Decimal(10, 2)
+  finalCash     Decimal?  @db.Decimal(10, 2) // Real contado
+  expectedCash  Decimal?  @db.Decimal(10, 2) // Calculado por sistema
+  
+  status        String    @default("OPEN") // OPEN, CLOSED
+  
+  userId        String
+  user          User      @relation(fields: [userId], references: [id])
+  
+  cashRegisterId String
+  cashRegister   CashRegister @relation(fields: [cashRegisterId], references: [id])
+  
+  movements     CashMovement[]
+  sales         Sale[]
+}
+
+model CashMovement {
+  id          String   @id @default(uuid())
+  type        String   // IN (Ingreso), OUT (Retiro/Gasto)
+  amount      Decimal  @db.Decimal(10, 2)
+  reason      String
+  
+  sessionId   String
+  session     CashRegisterSession @relation(fields: [sessionId], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
+
+model Sale {
+  id              String   @id @default(uuid())
+  folio           Int      @default(autoincrement()) // Secuencial simple (idealmente compuesto por tenant)
+  
+  totalBase       Decimal  @db.Decimal(10, 2) // Subtotal sin imp
+  totalIva        Decimal  @db.Decimal(10, 2)
+  total           Decimal  @db.Decimal(10, 2)
+  
+  status          String   @default("COMPLETED") // COMPLETED, CANCELLED, PENDING
+  paymentMethod   PaymentMethod
+  
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  
+  customerId      String?
+  customer        Customer? @relation(fields: [customerId], references: [id])
+  
+  userId          String
+  user            User     @relation(fields: [userId], references: [id])
+  
+  cashSessionId   String?
+  cashSession     CashRegisterSession? @relation(fields: [cashSessionId], references: [id])
+  
+  items           SaleItem[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model SaleItem {
+  id          String   @id @default(uuid())
+  quantity    Int
+  unitPrice   Decimal  @db.Decimal(10, 2) // Precio al momento de venta
+  subtotal    Decimal  @db.Decimal(10, 2)
+  ivaAmount   Decimal  @db.Decimal(10, 2)
+  total       Decimal  @db.Decimal(10, 2)
+  
+  productName String   // Snapshot del nombre
+  
+  saleId      String
+  sale        Sale     @relation(fields: [saleId], references: [id])
+  
+  productId   String?
+  product     Product? @relation(fields: [productId], references: [id])
+}
+
+// --- AUDITORÍA ---
+
+model AuditLog {
+  id          String   @id @default(uuid())
+  action      String   // CREATE, UPDATE, DELETE, LOGIN
+  entity      String   // Product, User, Sale
+  entityId    String?
+  payload     Json?
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+  
+  tenantId    String
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  
+  createdAt   DateTime @default(now())
+}
