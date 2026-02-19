@@ -1,0 +1,135 @@
+[
+  {
+    "slug": "beverages",
+    "name": "Bebidas (refrescos/jugos)",
+    "sortOrder": 10,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/beverages.svg"
+  },
+  {
+    "slug": "water",
+    "name": "Agua e hidratación",
+    "sortOrder": 11,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/water.svg"
+  },
+  {
+    "slug": "coffee_tea",
+    "name": "Café y té",
+    "sortOrder": 15,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/coffee_tea.svg"
+  },
+  {
+    "slug": "dairy",
+    "name": "Lácteos y huevo",
+    "sortOrder": 20,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/dairy.svg"
+  },
+  {
+    "slug": "bakery",
+    "name": "Panadería y tortillas",
+    "sortOrder": 30,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/bakery.svg"
+  },
+  {
+    "slug": "snacks",
+    "name": "Botanas",
+    "sortOrder": 40,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/snacks.svg"
+  },
+  {
+    "slug": "candy",
+    "name": "Dulces y chocolates",
+    "sortOrder": 50,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/candy.svg"
+  },
+  {
+    "slug": "grocery",
+    "name": "Abarrotes",
+    "sortOrder": 60,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/grocery.svg"
+  },
+  {
+    "slug": "canned",
+    "name": "Enlatados y conservas",
+    "sortOrder": 70,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/canned.svg"
+  },
+  {
+    "slug": "condiments",
+    "name": "Condimentos, salsas y aderezos",
+    "sortOrder": 80,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/condiments.svg"
+  },
+  {
+    "slug": "frozen",
+    "name": "Congelados",
+    "sortOrder": 90,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/frozen.svg"
+  },
+  {
+    "slug": "produce",
+    "name": "Frutas y verduras",
+    "sortOrder": 100,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/produce.svg"
+  },
+  {
+    "slug": "cleaning",
+    "name": "Limpieza del hogar",
+    "sortOrder": 110,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/cleaning.svg"
+  },
+  {
+    "slug": "hygiene",
+    "name": "Higiene personal",
+    "sortOrder": 120,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/hygiene.svg"
+  },
+  {
+    "slug": "pharmacy",
+    "name": "Farmacia básica",
+    "sortOrder": 130,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/pharmacy.svg"
+  },
+  {
+    "slug": "baby",
+    "name": "Bebé",
+    "sortOrder": 140,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/baby.svg"
+  },
+  {
+    "slug": "pet",
+    "name": "Mascotas",
+    "sortOrder": 150,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/pet.svg"
+  },
+  {
+    "slug": "disposable",
+    "name": "Desechables",
+    "sortOrder": 160,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/disposable.svg"
+  },
+  {
+    "slug": "stationery",
+    "name": "Papelería básica",
+    "sortOrder": 170,
+    "isActive": true,
+    "defaultImageKey": "catalog/placeholders/stationery.svg"
+  }
+]

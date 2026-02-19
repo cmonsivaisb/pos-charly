@@ -25,6 +25,25 @@ enum SubscriptionStatus {
   CANCELLED
 }
 
+enum PaymentProvider {
+  MERCADOPAGO
+  MANUAL
+  PAYPAL
+}
+
+enum PaymentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  CANCELLED
+}
+
+enum ManualPaymentStatus {
+  SUBMITTED
+  APPROVED
+  REJECTED
+}
+
 enum PriceInputMode {
   INCLUDES_TAX // Precio incluye IVA
   EXCLUDES_TAX // Precio más IVA
@@ -81,6 +100,8 @@ model Tenant {
   inventoryMovements InventoryMovement[]
   cashRegisters     CashRegister[]
   auditLogs         AuditLog[]
+  paymentTransactions PaymentTransaction[]
+  manualPaymentRequests ManualPaymentRequest[]
 }
 
 model User {
@@ -105,12 +126,88 @@ model User {
 
 // --- CATÁLOGOS ---
 
+model CatalogCategory {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  sortOrder       Int      @default(0)
+  isActive        Boolean  @default(true)
+  defaultImageKey String   // path relativo dentro de /public/catalog-images/
+  
+  products        CatalogProduct[]
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CatalogProduct {
+  id              String   @id @default(uuid())
+  catalogCode     String   @unique // Identificador estable para upsert
+  
+  brand           String
+  name            String
+  variant         String?
+  
+  sizeValue       Float?
+  sizeUnit        String?  // ML | L | G | KG | PIECE
+  
+  unit            String   // PIECE | KG | SERVICE
+  barcode         String?
+  
+  tags            String[]
+  synonyms        String[]
+  
+  ivaRate         Decimal  @default(0.16) @db.Decimal(5, 2)
+  priceInputMode  PriceInputMode @default(INCLUDES_TAX)
+  priceBase       Decimal  @db.Decimal(10, 2)
+  priceTotal      Decimal  @db.Decimal(10, 2)
+  
+  imageKey        String?  // path específico si existe
+  isActive        Boolean  @default(true)
+  
+  categoryId      String
+  category        CatalogCategory @relation(fields: [categoryId], references: [id])
+  
+  packItems       CatalogPackItem[]
+  tenantProducts  Product[] // Relación inversa para saber cuántos tenants usan este producto
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model CatalogPack {
+  id          String   @id @default(uuid())
+  code        String   @unique
+  name        String
+  description String?
+  isActive    Boolean  @default(true)
+  
+  items       CatalogPackItem[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model CatalogPackItem {
+  id               String   @id @default(uuid())
+  quantity         Int      @default(1)
+  
+  packId           String
+  pack             CatalogPack @relation(fields: [packId], references: [id])
+  
+  catalogProductId String
+  catalogProduct   CatalogProduct @relation(fields: [catalogProductId], references: [id])
+
+  @@unique([packId, catalogProductId])
+}
+
 model Category {
-  id        String   @id @default(uuid())
-  name      String
-  tenantId  String
-  tenant    Tenant   @relation(fields: [tenantId], references: [id])
-  products  Product[]
+  id              String   @id @default(uuid())
+  name            String
+  defaultImageKey String?
+  tenantId        String
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  products        Product[]
   
   @@unique([tenantId, name])
 }
@@ -143,6 +240,10 @@ model Product {
   
   isActive        Boolean  @default(true)
   
+  // Catálogo Global (Opcional)
+  catalogProductId String?
+  catalogProduct   CatalogProduct? @relation(fields: [catalogProductId], references: [id])
+
   tenantId        String
   tenant          Tenant   @relation(fields: [tenantId], references: [id])
   categoryId      String?
@@ -299,4 +400,44 @@ model AuditLog {
   tenant      Tenant   @relation(fields: [tenantId], references: [id])
   
   createdAt   DateTime @default(now())
+}
+
+model PaymentTransaction {
+  id               String          @id @default(uuid())
+  provider         PaymentProvider
+  providerPaymentId String?        // ID retornado por el provider (ej. MP payment id)
+  status           PaymentStatus   @default(PENDING)
+  amount           Decimal         @db.Decimal(10, 2)
+  currency         String          @default("MXN")
+  metadata         Json?           // Para guardar respuesta completa del webhook
+  
+  tenantId         String
+  tenant           Tenant          @relation(fields: [tenantId], references: [id])
+  
+  manualRequestId  String?         @unique
+  manualRequest    ManualPaymentRequest? @relation(fields: [manualRequestId], references: [id])
+
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+
+  @@unique([provider, providerPaymentId])
+}
+
+model ManualPaymentRequest {
+  id             String              @id @default(uuid())
+  status         ManualPaymentStatus @default(SUBMITTED)
+  amount         Decimal             @db.Decimal(10, 2)
+  bankName       String?
+  paymentDate    DateTime?
+  reference      String?
+  evidencePath   String?             // Path al comprobante (webp/pdf)
+  adminComment   String?
+  
+  tenantId       String
+  tenant         Tenant              @relation(fields: [tenantId], references: [id])
+  
+  transaction    PaymentTransaction?
+
+  createdAt      DateTime            @default(now())
+  updatedAt      DateTime            @updatedAt
 }

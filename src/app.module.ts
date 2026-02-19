@@ -12,6 +12,7 @@ import { ProductsModule } from './products/products.module';
 import { SalesModule } from './sales/sales.module';
 import { PaymentsModule } from './payments/payments.module';
 import { AdminModule } from './admin/admin.module';
+import { CatalogModule } from './catalog/catalog.module';
 
 @Module({
   imports: [
@@ -30,6 +31,7 @@ import { AdminModule } from './admin/admin.module';
     SalesModule,
     PaymentsModule,
     AdminModule,
+    CatalogModule,
   ],
   controllers: [AppController],
   providers: [AppService],

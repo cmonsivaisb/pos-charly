@@ -11,6 +11,7 @@ export class PaymentsService {
       where: { id: tenantId },
       data: {
         subscriptionStatus: SubscriptionStatus.ACTIVE,
+        activeSince: new Date(),
         nextPaymentDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 días
       },
     });

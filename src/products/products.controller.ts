@@ -11,11 +11,12 @@ import {
   UseInterceptors,
   UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody } from '@nestjs/swagger';
+import { ApiTags, ApiBearerAuth, ApiConsumes, ApiBody, ApiOperation } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { v4 as uuidv4 } from 'uuid';
-import { extname } from 'path';
+import { extname, join } from 'path';
+import { existsSync, mkdirSync } from 'fs';
 import { ProductsService } from './products.service';
 import { CreateProductDto, UpdateProductDto } from './dto/product.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
@@ -40,7 +41,14 @@ export class ProductsController {
   @UseInterceptors(
     FileInterceptor('file', {
       storage: diskStorage({
-        destination: './uploads/products',
+        destination: (req: any, file, cb) => {
+          const tenantId = req.user.tenantId;
+          const uploadPath = join(process.cwd(), 'uploads', 'tenants', tenantId, 'products');
+          if (!existsSync(uploadPath)) {
+            mkdirSync(uploadPath, { recursive: true });
+          }
+          cb(null, uploadPath);
+        },
         filename: (req, file, cb) => {
           const uniqueSuffix = uuidv4();
           cb(null, `${uniqueSuffix}${extname(file.originalname)}`);
@@ -69,7 +77,31 @@ export class ProductsController {
     @UploadedFile() file: Express.Multer.File,
     @Request() req: any,
   ) {
-    return this.productsService.updateImagePath(req.user.tenantId, id, file.path);
+    // Relative path for frontend serving
+    const relativePath = `uploads/tenants/${req.user.tenantId}/products/${file.filename}`;
+    return this.productsService.updateImagePath(req.user.tenantId, id, relativePath);
+  }
+
+  @Post('import-from-catalog/:catalogProductId')
+  @UseGuards(SubscriptionGuard)
+  @ApiOperation({ summary: 'Import a product from global catalog' })
+  importFromCatalog(
+    @Request() req: any,
+    @Param('catalogProductId') catalogProductId: string,
+    @Body() overrides: any,
+  ) {
+    return this.productsService.importFromCatalog(req.user.tenantId, catalogProductId, overrides);
+  }
+
+  @Post('import-pack/:packCode')
+  @UseGuards(SubscriptionGuard)
+  @ApiOperation({ summary: 'Import a pack from global catalog' })
+  importPack(
+    @Request() req: any,
+    @Param('packCode') packCode: string,
+    @Body() body: { mode: 'MERGE' | 'REPLACE' },
+  ) {
+    return this.productsService.importPack(req.user.tenantId, packCode, body.mode);
   }
 
   @Get()

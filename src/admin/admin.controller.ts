@@ -1,51 +1,38 @@
-import {
-  Controller,
-  Get,
-  Patch,
-  Body,
-  Param,
-  UseGuards,
-  Request,
-} from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
+import { Controller, Get, Param, Patch, Body, UseGuards, Query } from '@nestjs/common';
 import { AdminService } from './admin.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole, SubscriptionStatus } from '@prisma/client';
+import { UserRole } from '@prisma/client';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 
-@ApiTags('Platform Admin')
+@ApiTags('Admin')
 @ApiBearerAuth()
+@Controller('admin')
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles(UserRole.PLATFORM_ADMIN)
-@Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
 
   @Get('tenants')
-  @ApiOperation({ summary: 'List all tenants' })
-  findAllTenants() {
+  @ApiOperation({ summary: 'Listar todos los tenants' })
+  async findAllTenants() {
     return this.adminService.findAllTenants();
   }
 
-  @Get('tenants/:id')
-  @ApiOperation({ summary: 'Get tenant details' })
-  findTenantById(@Param('id') id: string) {
-    return this.adminService.findTenantById(id);
+  @Get('stats')
+  @ApiOperation({ summary: 'Obtener estadísticas globales' })
+  async getStats() {
+    return this.adminService.getStats();
   }
 
-  @Patch('tenants/:id/subscription')
-  @ApiOperation({ summary: 'Update tenant subscription status' })
-  updateSubscription(
+  @Patch('tenants/:id/status')
+  @ApiOperation({ summary: 'Actualizar estado de suscripción de un tenant' })
+  async updateTenantStatus(
     @Param('id') id: string,
-    @Body()
-    dto: {
-      status?: SubscriptionStatus;
-      trialEndsAt?: Date;
-      suspendedReason?: string;
-    },
-    @Request() req: any,
+    @Body('status') status: any,
+    @Body('reason') reason?: string,
   ) {
-    return this.adminService.updateSubscription(id, dto, req.user.userId);
+    return this.adminService.updateTenantStatus(id, status, reason);
   }
 }
