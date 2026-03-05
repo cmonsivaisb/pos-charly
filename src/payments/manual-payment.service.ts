@@ -2,19 +2,10 @@ import { Injectable, NotFoundException, ForbiddenException, BadRequestException 
 import { PrismaService } from '../prisma/prisma.service';
 import { ManualPaymentStatus, PaymentProvider, PaymentStatus, SubscriptionStatus } from '@prisma/client';
 import { CreateManualPaymentDto } from './dto/payment-request.dto';
-import * as path from 'path';
-import * as fs from 'fs';
-import sharp from 'sharp';
 
 @Injectable()
 export class ManualPaymentService {
-  private readonly UPLOAD_DIR = path.join(process.cwd(), 'uploads', 'payments');
-
-  constructor(private prisma: PrismaService) {
-    if (!fs.existsSync(this.UPLOAD_DIR)) {
-      fs.mkdirSync(this.UPLOAD_DIR, { recursive: true });
-    }
-  }
+  constructor(private prisma: PrismaService) {}
 
   async createRequest(dto: CreateManualPaymentDto, tenantId: string) {
     return this.prisma.manualPaymentRequest.create({
@@ -28,32 +19,8 @@ export class ManualPaymentService {
     });
   }
 
-  async uploadEvidence(id: string, file: Express.Multer.File, tenantId: string) {
-    const request = await this.prisma.manualPaymentRequest.findUnique({ where: { id } });
-    if (!request) throw new NotFoundException('Request not found');
-    if (request.tenantId !== tenantId) throw new ForbiddenException();
-
-    const fileName = `${id}-${Date.now()}.webp`;
-    const filePath = path.join(this.UPLOAD_DIR, fileName);
-
-    if (file.mimetype.startsWith('image/')) {
-      await sharp(file.buffer)
-        .resize(1400, null, { withoutEnlargement: true })
-        .webp({ quality: 75 })
-        .toFile(filePath);
-    } else if (file.mimetype === 'application/pdf') {
-      const pdfPath = path.join(this.UPLOAD_DIR, `${id}-${Date.now()}.pdf`);
-      fs.writeFileSync(pdfPath, file.buffer);
-      // Actualizar evidencePath con el pdf si es necesario, pero el prompt pide webp para imágenes.
-      // Suponemos que si es PDF se guarda directo.
-    } else {
-      throw new BadRequestException('Invalid file type');
-    }
-
-    return this.prisma.manualPaymentRequest.update({
-      where: { id },
-      data: { evidencePath: `/uploads/payments/${path.basename(filePath)}` },
-    });
+  async uploadEvidence() {
+    throw new BadRequestException('Uploads are disabled');
   }
 
   async findAll(status?: ManualPaymentStatus) {

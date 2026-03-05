@@ -1,4 +1,4 @@
-import { Controller, Post, Body, UseGuards, Param, Patch, UploadedFile, UseInterceptors, Get, Query } from '@nestjs/common';
+import { Controller, Post, Body, UseGuards, Param, Patch, Get, Query } from '@nestjs/common';
 import { MercadoPagoService } from './mercadopago.service';
 import { ManualPaymentService } from './manual-payment.service';
 import { PaymentsService } from './payments.service';
@@ -7,8 +7,7 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { UserRole, ManualPaymentStatus } from '@prisma/client';
 import { GetUser } from '../auth/decorators/get-user.decorator';
-import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiTags, ApiOperation, ApiConsumes } from '@nestjs/swagger';
+import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { CreateMPPreferenceDto, CreateManualPaymentDto, ApproveManualPaymentDto, RejectManualPaymentDto } from './dto/payment-request.dto';
 
 @ApiTags('Payments')
@@ -49,19 +48,6 @@ export class PaymentsController {
   @ApiOperation({ summary: 'Crear solicitud de pago manual' })
   async createManualRequest(@Body() dto: CreateManualPaymentDto, @GetUser() user: any) {
     return this.manualService.createRequest(dto, user.tenantId);
-  }
-
-  @Post('manual/requests/:id/upload')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FileInterceptor('file'))
-  @ApiConsumes('multipart/form-data')
-  @ApiOperation({ summary: 'Subir comprobante de pago manual' })
-  async uploadEvidence(
-    @Param('id') id: string,
-    @UploadedFile() file: Express.Multer.File,
-    @GetUser() user: any,
-  ) {
-    return this.manualService.uploadEvidence(id, file, user.tenantId);
   }
 
   @Get('manual/my-requests')
